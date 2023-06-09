@@ -116,7 +116,14 @@ async function run() {
       const result = await classesCollections.find().toArray();
       res.send(result);
     });
-    app.post("/classes", async (req, res) => {
+    app.get("/classes/myclasses/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { instructor_email: email };
+      const result = await classesCollections.find(query).toArray();
+      res.send(result);
+    });
+    app.post("/classes", verifyJWT, async (req, res) => {
       const data = req.body;
       const result = await classesCollections.insertOne(data);
       res.send(result);
