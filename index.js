@@ -44,6 +44,17 @@ async function run() {
       const result = await usersCollections.updateOne(filter, updatedUser);
       res.send(result);
     });
+    app.patch("/users/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          role: "instructor",
+        },
+      };
+      const result = await usersCollections.updateOne(filter, updatedUser);
+      res.send(result);
+    });
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
