@@ -40,7 +40,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    client.connect();
     const classesCollections = client.db("SportsAcademyDB").collection("classes");
     const usersCollections = client.db("SportsAcademyDB").collection("users");
 
@@ -116,9 +116,8 @@ async function run() {
       const result = await classesCollections.find().toArray();
       res.send(result);
     });
-    app.get("/classes/myclasses/:email", async (req, res) => {
+    app.get("/classes/myclasses/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
       const query = { instructor_email: email };
       const result = await classesCollections.find(query).toArray();
       res.send(result);
