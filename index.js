@@ -116,6 +116,11 @@ async function run() {
       const result = await classesCollections.find().toArray();
       res.send(result);
     });
+    app.post("/classes", async (req, res) => {
+      const data = req.body;
+      const result = await classesCollections.insertOne(data);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
