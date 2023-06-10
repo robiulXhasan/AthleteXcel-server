@@ -127,6 +127,18 @@ async function run() {
       const result = await classesCollections.insertOne(data);
       res.send(result);
     });
+    app.patch("/classes/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+      const filter = { _id: new ObjectId(id) };
+      const updatedClass = {
+        $set: {
+          status: status,
+        },
+      };
+      const result = await classesCollections.updateOne(filter, updatedClass);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
