@@ -42,6 +42,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     client.connect();
     const classesCollections = client.db("SportsAcademyDB").collection("classes");
+    const selectedClassCollections = client.db("SportsAcademyDB").collection("selectedClass");
     const usersCollections = client.db("SportsAcademyDB").collection("users");
 
     //jwt
@@ -122,7 +123,7 @@ async function run() {
       const result = await classesCollections.findOne(query);
       res.send(result);
     });
-    app.patch("/classes/feedback/:id", async (req, res) => {
+    app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const feedback = req.body.feedback;
       const query = { _id: new ObjectId(id) };
@@ -156,6 +157,14 @@ async function run() {
         },
       };
       const result = await classesCollections.updateOne(filter, updatedClass);
+      res.send(result);
+    });
+
+    //selected class
+    app.post("/selectedclass", verifyJWT, async (req, res) => {
+      const data = req.body.classData;
+      console.log(data);
+      const result = await selectedClassCollections.insertOne(data);
       res.send(result);
     });
 
