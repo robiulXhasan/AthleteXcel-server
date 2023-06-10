@@ -79,7 +79,7 @@ async function run() {
         res.send({ instructor: false });
       }
     });
-    app.patch("/users/admin/:id", async (req, res) => {
+    app.patch("/users/admin/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedUser = {
@@ -90,7 +90,7 @@ async function run() {
       const result = await usersCollections.updateOne(filter, updatedUser);
       res.send(result);
     });
-    app.patch("/users/instructor/:id", async (req, res) => {
+    app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedUser = {
@@ -114,6 +114,25 @@ async function run() {
     //classes api
     app.get("/classes", async (req, res) => {
       const result = await classesCollections.find().toArray();
+      res.send(result);
+    });
+    app.get("/classes/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classesCollections.findOne(query);
+      res.send(result);
+    });
+    app.patch("/classes/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const feedback = req.body.feedback;
+      const query = { _id: new ObjectId(id) };
+
+      const updatedClass = {
+        $set: {
+          feedback: feedback,
+        },
+      };
+      const result = await classesCollections.updateOne(query, updatedClass);
       res.send(result);
     });
     app.get("/classes/myclasses/:email", verifyJWT, async (req, res) => {
