@@ -7,6 +7,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
+
 // middleware
 app.use(cors());
 app.use(express.json());
@@ -42,8 +44,10 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     client.connect();
     const classesCollections = client.db("SportsAcademyDB").collection("classes");
-    const selectedClassCollections = client.db("SportsAcademyDB").collection("selectedClass");
+    const bookedClassCollections = client.db("SportsAcademyDB").collection("bookedClass");
+    const myClassClassCollections = client.db("SportsAcademyDB").collection("myClasses");
     const usersCollections = client.db("SportsAcademyDB").collection("users");
+    const paymentCollections = client.db("SportsAcademyDB").collection("payments");
 
     //jwt
     app.post("/jwt", (req, res) => {
@@ -161,11 +165,76 @@ async function run() {
     });
 
     //selected class
-    app.post("/selectedclass", verifyJWT, async (req, res) => {
-      const data = req.body.classData;
-      console.log(data);
-      const result = await selectedClassCollections.insertOne(data);
+    app.get("/bookedclass/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const query = { user_email: email };
+      const result = await bookedClassCollections.find(query).toArray();
       res.send(result);
+    });
+    // app.get("/bookedclass/find", (req, res) => {
+    //   const id = req.query.id;
+    //   const email = req.query.email;
+    //   console.log("hele", id, email);
+    // });
+    app.post("/bookedclass", verifyJWT, async (req, res) => {
+      const data = req.body.bookedClass;
+      const email = data.user_email;
+      const id = data.class_id;
+      const query = {
+        class_id: id,
+        user_email: email,
+      };
+      const checkData = await bookedClassCollections.find(query).toArray();
+      if (checkData.length > 0) {
+        res.send("available");
+      } else {
+        const result = await bookedClassCollections.insertOne(data);
+        res.send(result);
+      }
+    });
+    app.delete("/bookedclass/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const result = await bookedClassCollections.deleteOne(query);
+      res.send(result);
+    });
+
+    //my classes api
+
+    //create payment intent
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    //payment related api
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const result = await paymentCollections.insertOne(payment);
+      // add to my class collection
+      const myClassResult = await myClassClassCollections.insertOne(payment.class);
+      const find = { class_id: payment?.class_id };
+      const query = { _id: new ObjectId(payment?.class_id) };
+      //update enroll student and available seats
+      const updatedClass = {
+        $inc: {
+          enroll_students: 1,
+          available_seats: -1,
+        },
+      };
+
+      const updateResult = await classesCollections.updateOne(query, updatedClass);
+      // delete from booked
+      const deleteResult = await bookedClassCollections.deleteOne(find);
+      res.send({ result, myClassResult, updateResult, deleteResult });
     });
 
     // Send a ping to confirm a successful connection
