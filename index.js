@@ -140,20 +140,27 @@ async function run() {
       const result = await classesCollections.find(query).toArray();
       res.send(result);
     });
-    //popular classes
-    // app.get("/popular-classes", async (req, res) => {
-    //   const result = await classesCollections
-    //     .find()
-    //     .sort({ enroll_students: -1 })
-    //     .limit(6)
-    //     .toArray();
 
-    //   res.send(result);
-    // });
     app.get("/classes/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await classesCollections.findOne(query);
+      res.send(result);
+    });
+    //update class
+    app.patch("/classes/update/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const data = req.body.data;
+      const query = { _id: new ObjectId(id) };
+
+      const updatedClass = {
+        $set: {
+          name: data?.name,
+          available_seats: data?.available_seats,
+          price: data?.price,
+        },
+      };
+      const result = await classesCollections.updateOne(query, updatedClass);
       res.send(result);
     });
     app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
