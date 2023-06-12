@@ -140,6 +140,17 @@ async function run() {
       const result = await classesCollections.find(query).toArray();
       res.send(result);
     });
+    app.get("/classes/allclasses", async (req, res) => {
+      const result = await classesCollections.find().toArray();
+      res.send(result);
+    });
+    app.get("/allclasses", verifyJWT, async (req, res) => {
+      const query = { status: "Approved" };
+      const query2 = { status: "Pending" };
+      const approvedResult = await classesCollections.find(query).toArray();
+      const pendingResult = await classesCollections.find(query2).toArray();
+      res.send({ approvedResult, pendingResult });
+    });
 
     app.get("/classes/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
@@ -208,6 +219,19 @@ async function run() {
       const query = { user_email: email };
       const result = await bookedClassCollections.find(query).toArray();
       res.send(result);
+    });
+    app.get("/addedclasses/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      const query = { instructor_email: email, status: "Approved" };
+
+      const approvedResult = await classesCollections.find(query).toArray();
+
+      const query2 = { instructor_email: email, status: "Pending" };
+
+      const pendingResult = await classesCollections.find(query2).toArray();
+
+      res.send({ approvedResult, pendingResult });
     });
     // app.get("/bookedclass/find", (req, res) => {
     //   const id = req.query.id;
